@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ai-a3-laws · Three-Law Runtime Guard Demo 三定律判定演示</title>
+<style>
+  :root{--bg:#0f172a;--card:#1e293b;--line:#334155;--ok:#22c55e;--block:#ef4444;--info:#38bdf8;--txt:#e2e8f0;--muted:#94a3b8}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;padding:32px 16px;line-height:1.6}
+  .wrap{max-width:960px;margin:0 auto}
+  h1{font-size:24px;font-weight:700;margin-bottom:4px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:24px}
+  h2{font-size:17px;margin:28px 0 12px;color:var(--info);border-left:3px solid var(--info);padding-left:10px}
+  .laws{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:8px}
+  .law{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}
+  .law b{display:block;font-size:15px;margin-bottom:6px}
+  .law span{font-size:12.5px;color:var(--muted)}
+  .flow{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:8px}
+  .flow-steps{display:flex;align-items:center;flex-wrap:wrap;gap:8px;font-size:13px}
+  .step{background:#334155;padding:6px 12px;border-radius:6px;border:1px solid var(--line)}
+  .arrow{color:var(--muted)}
+  .step.pass{background:#14532d;border-color:var(--ok)}
+  .step.block{background:#450a0a;border-color:var(--block)}
+  .table-wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:8px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:640px}
+  th{background:#0f172a;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);font-weight:600}
+  td{padding:8px 10px;border-bottom:1px solid #1e293b;vertical-align:top;word-break:break-all}
+  code{background:#0f172a;padding:2px 6px;border-radius:4px;font-size:11.5px;color:#a5b4fc}
+  .ok{color:var(--ok);font-weight:600}
+  .blk{color:var(--block);font-weight:600}
+  .sim{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px}
+  textarea{width:100%;min-height:120px;background:#0f172a;color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:10px;font-family:ui-monospace,Consolas,monospace;font-size:12.5px;resize:vertical}
+  button{background:var(--info);color:#0c4a6e;border:none;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-top:10px}
+  button:hover{opacity:.9}
+  .result{margin-top:14px;border-radius:8px;padding:12px;font-family:ui-monospace,Consolas,monospace;font-size:13px;white-space:pre-wrap}
+  .result.pass{background:#052e16;border:1px solid var(--ok);color:#bbf7d0}
+  .result.block{background:#2a0a0a;border:1px solid var(--block);color:#fecaca}
+  .result.err{background:#1e1b0a;border:1px solid #eab308;color:#fef08a}
+  .preset{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .preset button{background:#334155;color:var(--txt);font-weight:500;padding:6px 10px;margin:0;font-size:12px}
+  .note{color:var(--muted);font-size:12px;margin-top:14px}
+  a{color:var(--info)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ai-a3-laws · Three-Law Runtime Guard</h1>
+  <p class="sub">Independent evaluation demo · 2026-10-16 · LGD-Eval evaluation line | 三定律运行时约束 · 评测演示 · 双语 Bilingual</p>
+
+  <h2>1. The three laws / 三定律</h2>
+  <div class="laws">
+    <div class="law"><b>A1 · Authority / 授权</b><span>Action must be within <code>authority_scope</code> whitelist. 动作须在授权白名单内。</span></div>
+    <div class="law"><b>A2 · Autonomy / 自主</b><span>High-risk actions require <code>human_review=True</code>. 高风险动作须人类监督。</span></div>
+    <div class="law"><b>A3 · Accountability / 可追责</b><span>Every decision carries <code>actor_id</code> + <code>decision_id</code>. 每个决策须可追责标识。</span></div>
+  </div>
+
+  <h2>2. Verification flow / 判定流程</h2>
+  <div class="flow">
+    <div class="flow-steps" id="flow">
+      <div class="step">Input decision<br>输入决策</div><span class="arrow">→</span>
+      <div class="step">A1 · in scope?<br>授权范围内？</div><span class="arrow">→</span>
+      <div class="step">A2 · human review?<br>人类监督？</div><span class="arrow">→</span>
+      <div class="step">A3 · ids present?<br>标识齐全？</div><span class="arrow">→</span>
+      <div class="step pass">PASS 通过 (exit 0)</div>
+    </div>
+    <div class="note">Any violation blocks immediately: A1 → exit 1, A2 → exit 1, A3 → exit 1, invalid JSON → exit 2. 任一违规立即阻断：非法 JSON → exit 2。</div>
+  </div>
+
+  <h2>3. Executed evidence (2026-10-16, Win10 / Python 3.13.13) / 实测证据</h2>
+  <div class="table-wrap">
+  <table>
+    <tr><th>#</th><th>Command 命令</th><th>Input (decision) 输入</th><th>Output 输出</th><th>Exit 退出码</th><th>Verdict 判定</th></tr>
+    <tr><td>1</td><td><code>--selftest</code></td><td>—</td><td><code>[selftest] PASS 3/3</code></td><td>0</td><td class="ok">PASS</td></tr>
+    <tr><td>2</td><td><code>--demo</code></td><td>read within scope + ids</td><td><code>[PASS] read in scope</code></td><td>0</td><td class="ok">PASS</td></tr>
+    <tr><td>3</td><td><code>--demo</code></td><td>prescribe out of scope</td><td><code>&lt;A1&gt; out of scope</code></td><td>0 (demo)</td><td class="blk">BLOCK A1</td></tr>
+    <tr><td>4</td><td><code>--demo</code></td><td>operate no review + no id</td><td><code>&lt;A2&gt; + &lt;A3&gt;</code></td><td>0 (demo)</td><td class="blk">BLOCK A2+A3</td></tr>
+    <tr><td>5</td><td><code>--json</code></td><td><code>{"action":"prescribe","authority_scope":["prescribe","operate"],"actor_id":"dr-alice","decision_id":"d-001","human_review":true}</code></td><td><code>[PASS] no violation</code></td><td>0</td><td class="ok">PASS</td></tr>
+    <tr><td>6</td><td><code>--json</code></td><td><code>{"action":"operate","authority_scope":["prescribe"],...,"human_review":false}</code></td><td><code>&lt;A1&gt; out of scope ['prescribe']</code></td><td>1</td><td class="blk">BLOCK A1</td></tr>
+    <tr><td>7</td><td><code>--json</code></td><td><code>{"action":"operate","authority_scope":["operate"],...,"human_review":false}</code></td><td><code>&lt;A2&gt; missing human_review</code></td><td>1</td><td class="blk">BLOCK A2</td></tr>
+    <tr><td>8</td><td><code>--json</code></td><td><code>{"action":"read","authority_scope":["read"],"human_review":false}</code></td><td><code>&lt;A3&gt; missing actor_id/decision_id</code></td><td>1</td><td class="blk">BLOCK A3</td></tr>
+    <tr><td>9</td><td><code>--json</code></td><td><code>not-json</code></td><td><code>[error] not valid JSON</code></td><td>2</td><td class="blk">NEGATIVE OK 负对照有效</td></tr>
+  </table>
+  </div>
+
+  <h2>4. Try it yourself / 交互试运行（前端模拟判定）</h2>
+  <div class="sim">
+    <textarea id="input" placeholder='Paste a decision JSON / 粘贴决策 JSON，例如：&#10;{"action":"prescribe","authority_scope":["prescribe","operate"],"actor_id":"dr-alice","decision_id":"d-001","human_review":true}'></textarea>
+    <div class="preset">
+      <button onclick="preset(1)">PASS preset</button>
+      <button onclick="preset(2)">BLOCK A1 preset</button>
+      <button onclick="preset(3)">BLOCK A2 preset</button>
+      <button onclick="preset(4)">BLOCK A3 preset</button>
+      <button onclick="preset(5)">invalid preset</button>
+    </div>
+    <button onclick="run()">Run 运行判定</button>
+    <div class="result" id="result">Awaiting input… 等待输入</div>
+  </div>
+
+  <p class="note">
+    Full report / 完整报告: <a href="https://github.com/LGD-Eval/evaluation-reports/blob/main/a3-laws三定律工具链独立评测_20261016.md">LGD-Eval/evaluation-reports</a> ·
+    Repo / 仓库: <a href="https://github.com/stevenzhao07/ai-a3-laws">stevenzhao07/ai-a3-laws</a> ·
+    This page simulates the guard logic in JavaScript for demonstration; authoritative results come from the Python CLI. 本页为 JS 前端模拟演示，权威结果以 Python CLI 实跑为准。
+  </p>
+</div>
+
+<script>
+const presets = [
+  '{"action":"prescribe","authority_scope":["prescribe","operate"],"actor_id":"dr-alice","decision_id":"d-001","human_review":true}',
+  '{"action":"operate","authority_scope":["prescribe"],"actor_id":"dr-alice","decision_id":"d-002","human_review":false}',
+  '{"action":"operate","authority_scope":["operate"],"actor_id":"dr-alice","decision_id":"d-003","human_review":false}',
+  '{"action":"read","authority_scope":["read"],"human_review":false}',
+  'not-json'
+];
+function preset(n){ document.getElementById('input').value = presets[n-1]; run(); }
+function run(){
+  const el = document.getElementById('result');
+  const raw = document.getElementById('input').value.trim();
+  if (!raw){ el.className='result err'; el.textContent='Empty input 输入为空'; return; }
+  let d;
+  try { d = JSON.parse(raw); }
+  catch(e){ el.className='result err'; el.textContent='[error] --json is not valid JSON: '+e.message+'\n(CLI would exit 2) CLI 将退出码 2'; return; }
+  const scope = Array.isArray(d.authority_scope) ? d.authority_scope : [];
+  const out = [];
+  let blocked = false;
+  if (!scope.includes(d.action)){ out.push("<A1> action '"+d.action+"' out of authority_scope ["+scope.join(', ')+"]"); blocked = true; }
+  if (!blocked && (d.human_review !== true) && isHighRisk(d.action)){
+    out.push("<A2> high-risk action '"+d.action+"' requires human_review=True"); blocked = true;
+  }
+  if (!blocked && (!d.actor_id || !d.decision_id)){
+    const missing=[]; if(!d.actor_id) missing.push('actor_id'); if(!d.decision_id) missing.push('decision_id');
+    out.push("<A3> missing accountability ids: ["+missing.join(', ')+"]"); blocked = true;
+  }
+  if (!blocked){ el.className='result pass'; el.textContent='[PASS] no violation — decision passes A1/A2/A3 (CLI exit 0) 无违规，三定律校验通过'; }
+  else { el.className='result block'; el.textContent=out.join('\n')+'\n(CLI would exit 1) CLI 将退出码 1'; }
+}
+function isHighRisk(a){ return ['prescribe','operate','train','update','deploy','delete','transmit'].includes(a); }
+</script>
+</body>
+</html>
