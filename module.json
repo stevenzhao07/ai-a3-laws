@@ -3,7 +3,7 @@
   "stage": "G",
   "stage_name": "AI 治理层",
   "title": "A³ Laws 运行时约束库（自主系统的三条安全边界）",
-  "description": "把「立法者（A³ Laws）」理念工程化为可部署的运行时约束库：对每一次自主决策做三定律校验——A1 权限边界（Authority）、A2 自主边界（人类监督）、A3 追责边界（可归因日志）。返回违规清单，可嵌入门禁或 Agent 循环。（对应『运行时约束』能力缺口。）",
+  "description": "Deployable runtime guard turning the 'Legislator (A3 Laws)' principle into three enforceable laws for autonomous decisions: A1 authority-scope, A2 human oversight, A3 accountability.",
   "triggers": {
     "keywords": [
       "a3-laws",
